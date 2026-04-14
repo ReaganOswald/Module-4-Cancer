@@ -100,3 +100,19 @@ plt.title("MYC and EGFR Expression in BRCA Samples")
 plt.show()
 
 # %%
+# read in txt file as csv
+gene_list = pd.read_table(r"C:\Users\karin\OneDrive - University of Virginia\Second Year\Comp BME\Module-4-Cancer\data\Menyhart_JPA_CancerHallmarks_core.txt", header=None, index_col = 0)
+
+#print(gene_list.head())
+angiogenesis_genes = []
+growth_genes = []
+
+angio_gene_pd = gene_list.loc['SUSTAINED ANGIOGENESIS']
+
+for gene in angio_gene_pd:
+    angiogenesis_genes.append(gene)
+
+for gene in gene_list.loc['EVADING GROWTH SUPPRESSORS']:
+    growth_genes.append(gene)
+    
+# %%
