@@ -116,3 +116,10 @@ for gene in gene_list.loc['EVADING GROWTH SUPPRESSORS']:
     growth_genes.append(gene)
     
 # %%
+#print(angiogenesis_genes)
+#print(growth_genes)
+print(BRCA_merged)
+
+for column in BRCA_merged.columns:
+    print(column)
+# %%
