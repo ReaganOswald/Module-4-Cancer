@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
-import seaborn as sns
 from sklearn.cluster import DBSCAN
+from sklearn.linear_model import LinearRegression
+import numpy as np
 
 data = pd.read_csv(
     r'C:\Users\karin\OneDrive - University of Virginia\Second Year\Comp BME\Module-4-Cancer\data\TRAINING_SET_GSE62944_subsample_log2TPM.csv', index_col=0, header=0)  # can also use larger dataset with more genes
@@ -141,3 +142,104 @@ plt.title("DBSCAN Clustering of COAD Samples")
 plt.show()
 
 # %%
+
+# First regression - average of all expression levels
+x_df = new_COAD_gene_data.loc[[g for g in angiogenesis_genes if g in new_COAD_gene_data.index]].T
+x_df = x_df.loc[:,~x_df.columns.duplicated(keep = 'first')]
+
+y_df = new_COAD_gene_data.loc[[g for g in growth_genes if g in new_COAD_gene_data.index]].T
+y_df = y_df.loc[:,~y_df.columns.duplicated(keep = 'first')]
+
+    
+#print(y_df)
+
+x_val = []
+y_val = []
+#print(len(y_df.columns))
+
+for i in range(80):
+    x_val.append(float(x_df.iloc[i].sum()))
+    y_val.append(float(y_df.iloc[i].sum()))
+
+
+x1 = np.array(x_val).reshape(-1,1)
+y1 = np.array(y_val)
+
+min_x = min(x1)
+max_x = max(x1)
+
+regression1 = LinearRegression().fit(x1, y1)
+
+
+x_test = np.linspace(min_x, max_x ,100).reshape(-1,1)
+y_test = regression1.predict(x_test)
+plt.scatter(x1,y1)
+plt.plot(x_test, y_test, color='red')
+plt.xlabel("Total Angiogenesis Gene Expression")
+plt.ylabel("Total Growth Suppression Gene Expression")
+plt.annotate("R^2 = {:.2f}".format(regression1.score(x1,y1)),xy=(0.5,0.9),xycoords='axes fraction',fontsize=14,ha='center')
+plt.show()
+
+
+# %%
+# regression 2 - VEGFA vs KRAS
+
+x2_val = []
+y2_val = []
+
+for value in x_df['VEGFA']:
+    x2_val.append(value)
+
+for value in y_df['KRAS']:
+    y2_val.append(value)
+
+
+x2 = np.array(x2_val).reshape(-1,1)
+y2 = np.array(y2_val)
+
+min_x2 = min(x2)
+max_x2 = max(x2)
+
+regression2 = LinearRegression().fit(x2,y2)
+
+x_test = np.linspace(min_x2, max_x2 ,100).reshape(-1,1)
+y_test = regression2.predict(x_test)
+plt.scatter(x2,y2)
+plt.plot(x_test, y_test, color='red')
+plt.xlabel("VEGFA Expression Level")
+plt.ylabel("KRAS Expression Level")
+plt.annotate("R^2 = {:.2f}".format(regression2.score(x2,y2)),xy=(0.5,0.9),xycoords='axes fraction',fontsize=14,ha='center')
+plt.show()
+
+# %%
+# regression 3 - VEGFA vs TP53
+
+x3_val = []
+y3_val = []
+
+for value in x_df['VEGFA']:
+    x3_val.append(value)
+
+for value in y_df['TP53']:
+    y3_val.append(value)
+
+
+x3 = np.array(x3_val).reshape(-1,1)
+y3 = np.array(y3_val)
+
+min_x3 = min(x3)
+max_x3 = max(x3)
+
+regression3 = LinearRegression().fit(x3,y3)
+
+x_test = np.linspace(min_x3, max_x3 ,100).reshape(-1,1)
+y_test = regression2.predict(x_test)
+plt.scatter(x3,y3)
+plt.plot(x_test, y_test, color='red')
+plt.xlabel("VEGFA Expression Level")
+plt.ylabel("KRAS Expression Level")
+plt.annotate("R^2 = {:.2f}".format(regression3.score(x3,y3)),xy=(0.5,0.9),xycoords='axes fraction',fontsize=14,ha='center')
+plt.show()
+
+# %%
+
