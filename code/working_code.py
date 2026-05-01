@@ -150,7 +150,9 @@ x_df = x_df.loc[:,~x_df.columns.duplicated(keep = 'first')]
 y_df = new_COAD_gene_data.loc[[g for g in growth_genes if g in new_COAD_gene_data.index]].T
 y_df = y_df.loc[:,~y_df.columns.duplicated(keep = 'first')]
 
-    
+print(y_df)
+
+# %%
 #print(y_df)
 
 x_val = []
@@ -169,8 +171,20 @@ min_x = min(x1)
 max_x = max(x1)
 
 regression1 = LinearRegression().fit(x1, y1)
+#regression = LinearRegression().fit(np.array(x_df), y1)
 
 
+x_test = np.linspace(min_x, max_x ,100).reshape(-1,1)
+y_test = regression1.predict(x_test)
+plt.scatter(x1,y1)
+plt.plot(x_test, y_test, color='red')
+plt.xlabel("Total Angiogenesis Gene Expression")
+plt.ylabel("Total Growth Suppression Gene Expression")
+plt.annotate("R^2 = {:.2f}".format(regression1.score(x1,y1)),xy=(0.5,0.9),xycoords='axes fraction',fontsize=14,ha='center')
+plt.show()
+
+# %%
+regression = LinearRegression().fit(np.array(x_df), y1)
 x_test = np.linspace(min_x, max_x ,100).reshape(-1,1)
 y_test = regression1.predict(x_test)
 plt.scatter(x1,y1)
@@ -242,4 +256,5 @@ plt.annotate("R^2 = {:.2f}".format(regression3.score(x3,y3)),xy=(0.5,0.9),xycoor
 plt.show()
 
 # %%
+
 
