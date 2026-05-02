@@ -184,16 +184,22 @@ plt.annotate("R^2 = {:.2f}".format(regression1.score(x1,y1)),xy=(0.5,0.9),xycoor
 plt.show()
 
 # %%
-regression = LinearRegression().fit(np.array(x_df), y1)
-x_test = np.linspace(min_x, max_x ,100).reshape(-1,1)
-y_test = regression1.predict(x_test)
-plt.scatter(x1,y1)
-plt.plot(x_test, y_test, color='red')
-plt.xlabel("Total Angiogenesis Gene Expression")
-plt.ylabel("Total Growth Suppression Gene Expression")
-plt.annotate("R^2 = {:.2f}".format(regression1.score(x1,y1)),xy=(0.5,0.9),xycoords='axes fraction',fontsize=14,ha='center')
-plt.show()
+print(x_df.head())
+print(x_df.shape())
 
+# %%
+
+
+x_train = np.array(x_df)
+regression = LinearRegression().fit(x_train, y1)
+
+# x_test1 = 
+y_test1 = regression.predict(x_test1)
+
+
+print(regression.score(np.array(x_df), y1))
+print(regression.coef_)
+print(regression.score(x_test1, y_test1))
 
 # %%
 # regression 2 - VEGFA vs KRAS
@@ -257,4 +263,56 @@ plt.show()
 
 # %%
 
+regression = LinearRegression().fit(np.array(x_df), y1)
+x_test = np.linspace(min_x, max_x ,100).reshape(-1,1)
+y_test = regression.predict(x_test)
+plt.scatter(x1,y1)
+plt.plot(x_test, y_test, color='red')
+plt.xlabel("Total Angiogenesis Gene Expression")
+plt.ylabel("Total Growth Suppression Gene Expression")
+plt.annotate("R^2 = {:.2f}".format(regression.score(x1,y1)),xy=(0.5,0.9),xycoords='axes fraction',fontsize=14,ha='center')
+plt.show()
 
+# %%
+
+# Remove overlap between hallmark categories
+angiogenesis_only = [g for g in angiogenesis_genes if g in new_COAD_gene_data.index and g not in growth_genes]
+growth_only = [g for g in growth_genes if g in new_COAD_gene_data.index and g not in angiogenesis_genes]
+
+print("Angiogenesis genes:", len(angiogenesis_only))
+print("Growth suppression genes:", len(growth_only))
+
+# X = angiogenesis genes (multidimensional features)
+x_df = new_COAD_gene_data.loc[angiogenesis_only].T
+x_df = x_df.loc[:, ~x_df.columns.duplicated()]
+
+# y = growth suppression genes (target components)
+y_df = new_COAD_gene_data.loc[growth_only].T
+y_df = y_df.loc[:, ~y_df.columns.duplicated()]
+
+# Collapse y into a single target value per patient
+y1 = y_df.sum(axis=1).values
+
+from sklearn.linear_model import LinearRegression
+
+regression = LinearRegression().fit(x_df.values, y1)
+y_pred = regression.predict(x_df.values)
+
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(7,5))
+plt.scatter(y1, y_pred, alpha=0.7)
+plt.xlabel("True Growth Suppression Score")
+plt.ylabel("Predicted Growth Suppression Score")
+plt.title("Multidimensional Regression Performance")
+
+# Perfect prediction line
+plt.plot([y1.min(), y1.max()], [y1.min(), y1.max()], 'r--')
+
+plt.annotate(f"R² = {regression.score(x_df.values, y1):.2f}",
+             xy=(0.5, 0.9), xycoords='axes fraction', ha='center')
+
+plt.show()
+
+
+# %%
