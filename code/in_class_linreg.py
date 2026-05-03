@@ -21,7 +21,6 @@ y = housing.target
 # lr_model = LinearRegression()
 # reg = lr_model.fit(X, y)
 reg = LinearRegression().fit(X, y)
-print("R^2", reg.score(X, y))
 print(reg.coef_, reg.intercept_)
 
 

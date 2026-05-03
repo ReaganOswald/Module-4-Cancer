@@ -93,8 +93,8 @@ for gene in angio_gene_pd:
 
 for gene in gene_list.loc['EVADING GROWTH SUPPRESSORS']:
     growth_genes.append(gene)
-angio_genes = []
-g_genes = []
+
+
 temp_gene_list = angiogenesis_genes + growth_genes
 
 #print(COAD_merged.head())
@@ -133,7 +133,7 @@ plt.show()
 
 # %%
 dbscan = DBSCAN(eps=0.6, min_samples=5)
-y_dbscan = dbscan.fit_predict()
+y_dbscan = dbscan.fit_predict(X)
 plt.figure(figsize=(8, 6))
 plt.scatter(X_pca[:, 0], X_pca[:, 1], c=y_dbscan, cmap='viridis')
 plt.xlabel("Principal Component 1")
@@ -170,36 +170,20 @@ y1 = np.array(y_val)
 min_x = min(x1)
 max_x = max(x1)
 
+
 regression1 = LinearRegression().fit(x1, y1)
 #regression = LinearRegression().fit(np.array(x_df), y1)
 
 
-x_test = np.linspace(min_x, max_x ,100).reshape(-1,1)
-y_test = regression1.predict(x_test)
+x_test1 = np.linspace(min_x, max_x ,100).reshape(-1,1)
+y_test1 = regression1.predict(x_test1)
 plt.scatter(x1,y1)
-plt.plot(x_test, y_test, color='red')
+plt.plot(x_test1, y_test1, color='red')
 plt.xlabel("Total Angiogenesis Gene Expression")
 plt.ylabel("Total Growth Suppression Gene Expression")
 plt.annotate("R^2 = {:.2f}".format(regression1.score(x1,y1)),xy=(0.5,0.9),xycoords='axes fraction',fontsize=14,ha='center')
 plt.show()
 
-# %%
-print(x_df.head())
-print(x_df.shape())
-
-# %%
-
-
-x_train = np.array(x_df)
-regression = LinearRegression().fit(x_train, y1)
-
-# x_test1 = 
-y_test1 = regression.predict(x_test1)
-
-
-print(regression.score(np.array(x_df), y1))
-print(regression.coef_)
-print(regression.score(x_test1, y_test1))
 
 # %%
 # regression 2 - VEGFA vs KRAS
@@ -261,17 +245,6 @@ plt.ylabel("KRAS Expression Level")
 plt.annotate("R^2 = {:.2f}".format(regression3.score(x3,y3)),xy=(0.5,0.9),xycoords='axes fraction',fontsize=14,ha='center')
 plt.show()
 
-# %%
-
-regression = LinearRegression().fit(np.array(x_df), y1)
-x_test = np.linspace(min_x, max_x ,100).reshape(-1,1)
-y_test = regression.predict(x_test)
-plt.scatter(x1,y1)
-plt.plot(x_test, y_test, color='red')
-plt.xlabel("Total Angiogenesis Gene Expression")
-plt.ylabel("Total Growth Suppression Gene Expression")
-plt.annotate("R^2 = {:.2f}".format(regression.score(x1,y1)),xy=(0.5,0.9),xycoords='axes fraction',fontsize=14,ha='center')
-plt.show()
 
 # %%
 
@@ -291,28 +264,76 @@ y_df = new_COAD_gene_data.loc[growth_only].T
 y_df = y_df.loc[:, ~y_df.columns.duplicated()]
 
 # Collapse y into a single target value per patient
-y1 = y_df.sum(axis=1).values
+y4 = y_df.sum(axis=1).values
 
-from sklearn.linear_model import LinearRegression
 
-regression = LinearRegression().fit(x_df.values, y1)
-y_pred = regression.predict(x_df.values)
+# %%
+# train multidimension regression
+x_df = x_df.loc[:, ~x_df.columns.isin(y_df.columns)]
+x_train = np.array(x_df)
+y_train = y4
 
-import matplotlib.pyplot as plt
+multi_reg = LinearRegression().fit(x_train, y_train)
 
-plt.figure(figsize=(7,5))
-plt.scatter(y1, y_pred, alpha=0.7)
+y_plot = y4
+y_plot_predict = multi_reg.predict(x_train)
+
+plt.scatter(y_plot, y_plot_predict)
 plt.xlabel("True Growth Suppression Score")
 plt.ylabel("Predicted Growth Suppression Score")
-plt.title("Multidimensional Regression Performance")
+plt.title("Validation Set: True vs Predicted Growth Suppression")
 
-# Perfect prediction line
-plt.plot([y1.min(), y1.max()], [y1.min(), y1.max()], 'r--')
+plt.plot([y_plot.min(), y_plot.max()], [y_plot.min(), y_plot.max()], 'r--')
 
-plt.annotate(f"R² = {regression.score(x_df.values, y1):.2f}",
+plt.annotate(f"R² = {multi_reg.score(x_train, y_train):.2f}",
+             xy=(0.5, 0.9), xycoords='axes fraction', ha='center')
+
+plt.show()
+
+# %%
+valid_data = pd.read_csv(r'C:\Users\karin\OneDrive - University of Virginia\Second Year\Comp BME\Module-4-Cancer\data\VALIDATION_SET_GSE62944_subsample_log2TPM.csv', index_col = 0)
+valid_metadata = pd.read_csv(r'C:\Users\karin\OneDrive - University of Virginia\Second Year\Comp BME\Module-4-Cancer\data\VALIDATION_SET_GSE62944_metadata.csv', index_col = 0)
+
+valid_samples = valid_metadata[valid_metadata['cancer_type'] == 'COAD'].index
+valid_COAD = valid_data[valid_samples]
+
+shared_angio = [g for g in x_df.columns if g in valid_COAD.index]
+shared_growth = [g for g in y_df.columns if g in valid_COAD.index]
+
+valid_x_df = valid_COAD.loc[shared_angio].T
+valid_y_df = valid_COAD.loc[shared_growth].T
+
+y_validation = valid_y_df.sum(axis=1).values
+x_validation = np.array(valid_x_df)
+
+y_validation_predict = multi_reg.predict(x_validation)
+
+print(multi_reg.score(x_validation, y_validation))
+print(multi_reg.coef_)
+
+# %% 
+plt.scatter(y_validation, y_validation_predict)
+plt.xlabel("True Growth Suppression Score")
+plt.ylabel("Predicted Growth Suppression Score")
+plt.title("Validation Set: True vs Predicted Growth Suppression")
+
+plt.plot([y_validation.min(), y_validation.max()], [y_validation.min(), y_validation.max()], 'r--')
+
+plt.annotate(f"R² = {multi_reg.score(x_validation, y_validation):.2f}",
              xy=(0.5, 0.9), xycoords='axes fraction', ha='center')
 
 plt.show()
 
 
+# %%
+feature_names = x_df.columns
+coefs = pd.DataFrame({
+    "Coefficient": multi_reg.coef_
+}, index=feature_names)
+
+
+coefs.plot.barh(figsize=(9, 7))
+plt.axvline(x=0, color=".5")
+plt.xlabel("Coefficient Values")
+plt.subplots_adjust(left=0.3)
 # %%
